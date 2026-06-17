@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude From Codex"
+  short_description: "Delegate Codex work to local Claude Code."
+  default_prompt: "Ask Claude to investigate this bug in parallel"
