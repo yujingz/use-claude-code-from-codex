@@ -11,14 +11,48 @@ Claude auth, cc-switch, provider routing, and `~/.claude/settings.json` remain e
 
 ## Install
 
-Use the documented Codex user-scope skills directory:
+There are two install paths. The simple path does not require Node. The `npx` path is just a convenience wrapper around the same symlink.
+
+### Simple Symlink
+
+Clone or download this repo, then link the skill folder into the documented Codex user-scope skills directory:
 
 ```sh
+git clone https://github.com/yujingz/use-claude-code-from-codex.git
+cd use-claude-code-from-codex
 mkdir -p "$HOME/.agents/skills"
 ln -s "$PWD/skills/claude-from-codex" "$HOME/.agents/skills/claude-from-codex"
 ```
 
 `~/.codex/skills` works in some local Codex versions, but `$HOME/.agents/skills` is the documented portable target.
+
+### Optional npx Installer
+
+If Node is available, the package also exposes a tiny installer that creates the same symlink:
+
+```sh
+npx -y github:yujingz/use-claude-code-from-codex
+```
+
+From a local checkout:
+
+```sh
+pnpm install:skill
+```
+
+The installer refuses to overwrite an existing different skill unless you pass `--force`:
+
+```sh
+claude-from-codex-skill install --force
+```
+
+### Verify Discovery
+
+Restart Codex or start a new Codex session, then check that `$claude-from-codex` appears in the available skills. A no-model-call local check is:
+
+```sh
+codex debug prompt-input '$claude-from-codex discovery check; do not run commands' | rg 'claude-from-codex'
+```
 
 ## Basic Usage
 
