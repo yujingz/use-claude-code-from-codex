@@ -4,7 +4,7 @@ A Codex skill for asking the local Claude Code CLI to help from inside Codex.
 
 Use it when you want Codex to bring Claude in for a second opinion, a read-only review, or a parallel investigation without leaving your Codex session.
 
-Claude auth, cc-switch, provider routing, and `~/.claude/settings.json` remain external user setup. This repo does not edit them.
+Prerequisite: Claude Code should already work on your machine.
 
 ## Install
 
@@ -16,7 +16,6 @@ If you are using Codex UI or Codex CLI, you can paste this into your current age
 Install the Codex skill from https://github.com/yujingz/use-claude-code-from-codex.
 Prefer the vercel-labs/skills installer if it is available.
 Install the skill named claude-from-codex for Codex, then verify that $claude-from-codex is discoverable.
-Do not change my Claude auth or ~/.claude/settings.json.
 ```
 
 ### Install From Terminal
@@ -78,15 +77,14 @@ Keep the change scoped to the failing test, then show me the diff before we cont
 If Claude works in your normal terminal but not inside Codex, ask Codex:
 
 ```text
-Use $claude-from-codex to diagnose why local Claude Code auth is not visible from Codex.
-Do not change my Claude settings; just report what is missing.
+Use $claude-from-codex to check whether Codex can see my local Claude Code CLI.
+Report what is missing.
 ```
 
 Common causes:
 
 - `claude` is not on the PATH visible to Codex.
-- Claude auth is configured for your terminal shell but not visible to the process that launched Codex.
-- cc-switch or provider routing needs to be fixed outside this repo.
+- Codex was launched from an environment that cannot see the same tools as your terminal.
 
 Advanced diagnostics and background job commands are documented in [docs/companion-cli.md](docs/companion-cli.md).
 
