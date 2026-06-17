@@ -2,7 +2,7 @@
 
 [![Codex Skill](https://img.shields.io/badge/Codex-Skill-000000)](https://developers.openai.com/codex/skills)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-Supported-6B5B95)](https://www.anthropic.com/claude-code)
-[![Local First](https://img.shields.io/badge/Local--first-No%20hosted%20service-2563EB)](#troubleshooting)
+[![Local First](https://img.shields.io/badge/Local--first-No%20hosted%20service-2563EB)](#install)
 [![No Plugin Required](https://img.shields.io/badge/No%20Codex%20plugin-required-16A34A)](#install)
 [![Node Optional](https://img.shields.io/badge/Node-optional-F59E0B)](docs/companion-cli.md)
 
@@ -31,13 +31,15 @@ Focus on bugs, security issues, and missing tests.
 
 ## Use It For
 
-| Task | Example prompt |
+These examples use this repo's own workflow, but the same pattern works in any project.
+
+| Real situation | What to ask Codex |
 | --- | --- |
-| Code review | `Use $claude-from-codex to ask Claude for a read-only review of my current diff.` |
-| Plan review | `Use $claude-from-codex to get Claude's second opinion on this implementation plan before we code.` |
-| Parallel investigation | `Use $claude-from-codex to have Claude investigate why this test is failing. Do not edit files.` |
-| Documentation review | `Use $claude-from-codex to ask Claude whether this README is clear for a first-time user.` |
-| Small write-capable pass | `Use $claude-from-codex to let Claude make a small implementation pass, then show me the diff before we continue.` |
+| You changed the worker state-root logic and want another model to check it | `Use $claude-from-codex to review the current diff around jobs.mjs and state.mjs. Check whether background workers still find jobs when XDG_STATE_HOME is set.` |
+| A documentation PR feels too close to the implementation details | `Use $claude-from-codex to review README.md as a first-time Codex user. Flag anything that sounds like internal planning instead of user-facing docs.` |
+| `pnpm test` fails and Codex is already working on a fix | `Use $claude-from-codex to investigate the failing pnpm test output in parallel. Do not edit files; return the likely root cause and the smallest fix.` |
+| You have an implementation plan but want a simpler alternative | `Use $claude-from-codex to critique docs/plans/2026-06-17-001-feat-claude-from-codex-skill-plan.md. Look for overengineering, missing tests, and a smaller path.` |
+| You explicitly want Claude to make a narrow edit | `Use $claude-from-codex to add a regression test for the XDG_STATE_HOME background-job case. Keep the change scoped, then show me the diff before continuing.` |
 
 More copy-paste prompts are in [docs/examples.md](docs/examples.md).
 
