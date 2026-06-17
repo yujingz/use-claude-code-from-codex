@@ -4,19 +4,10 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.24.0",
-  "bin": {
-    "claude-from-codex-skill": "scripts/install-skill.mjs"
-  },
-  "files": [
-    "README.md",
-    "scripts/install-skill.mjs",
-    "skills/claude-from-codex"
-  ],
   "engines": {
     "node": ">=20.0.0"
   },
   "scripts": {
-    "install:skill": "node scripts/install-skill.mjs install",
     "test": "node --test tests/*.test.mjs"
   }
 }

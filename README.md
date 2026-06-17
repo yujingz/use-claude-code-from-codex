@@ -1,6 +1,6 @@
 # Claude from Codex
 
-A plain Codex skill for asking the local Claude Code CLI to help from inside Codex.
+A Codex skill for asking the local Claude Code CLI to help from inside Codex.
 
 The skill has two paths:
 
@@ -11,11 +11,17 @@ Claude auth, cc-switch, provider routing, and `~/.claude/settings.json` remain e
 
 ## Install
 
-There are two install paths. The simple path does not require Node. The `npx` path is just a convenience wrapper around the same symlink.
+Use [`vercel-labs/skills`](https://github.com/vercel-labs/skills) as the default installer:
 
-### Simple Symlink
+```sh
+npx skills add yujingz/use-claude-code-from-codex --skill claude-from-codex -g -a codex -y
+```
 
-Clone or download this repo, then link the skill folder into the documented Codex user-scope skills directory:
+This installs the skill globally for Codex.
+
+### Manual Install
+
+If you do not want to use `npx skills`, download or clone this repo and link the skill folder yourself:
 
 ```sh
 git clone https://github.com/yujingz/use-claude-code-from-codex.git
@@ -24,33 +30,14 @@ mkdir -p "$HOME/.agents/skills"
 ln -s "$PWD/skills/claude-from-codex" "$HOME/.agents/skills/claude-from-codex"
 ```
 
-`~/.codex/skills` works in some local Codex versions, but `$HOME/.agents/skills` is the documented portable target.
-
-### Optional npx Installer
-
-If Node is available, the package also exposes a tiny installer that creates the same symlink:
-
-```sh
-npx -y github:yujingz/use-claude-code-from-codex
-```
-
-From a local checkout:
-
-```sh
-pnpm install:skill
-```
-
-The installer refuses to overwrite an existing different skill unless you pass `--force`:
-
-```sh
-claude-from-codex-skill install --force
-```
+If your Codex setup uses a different skills directory, link the same `skills/claude-from-codex` folder there instead.
 
 ### Verify Discovery
 
-Restart Codex or start a new Codex session, then check that `$claude-from-codex` appears in the available skills. A no-model-call local check is:
+Restart Codex or start a new Codex session, then check that `$claude-from-codex` appears in the available skills. No-model-call local checks:
 
 ```sh
+npx skills list -g -a codex
 codex debug prompt-input '$claude-from-codex discovery check; do not run commands' | rg 'claude-from-codex'
 ```
 
@@ -82,9 +69,9 @@ printf '%s\n' "$PROMPT" | claude -p --output-format json --setting-sources user,
 
 After any write-capable run, inspect the workspace diff before continuing.
 
-## Advanced Usage
+## Optional Companion CLI
 
-The companion script is optional and has no npm dependencies, but it requires Node.
+The companion script is useful when you want setup diagnostics, cleaner child-process environment handling, or background Claude jobs. It has no npm dependencies, but it requires Node.
 
 Setup diagnostics:
 
@@ -119,9 +106,9 @@ Background state is stored outside the repo under:
 ${CLAUDE_FROM_CODEX_STATE_ROOT:-${XDG_STATE_HOME:-~/.local/state}/claude-from-codex}
 ```
 
-## Validate
+## Development
 
-Author-time validation uses Node's built-in test runner through pnpm:
+Run the test suite with pnpm:
 
 ```sh
 pnpm test
@@ -135,8 +122,4 @@ For a non-generative live setup check:
 node skills/claude-from-codex/scripts/claude-companion.mjs setup --json
 ```
 
-Live foreground smoke tests can spend Claude tokens, so run them only when you intend to verify the current Claude CLI contract.
-
-## Deferred Scope
-
-This v1 does not include a Codex plugin wrapper, marketplace packaging, Windows background cancellation, rich transcript sync, or automatic full-session context transfer. Those can be added after the plain skill proves useful.
+Live foreground smoke tests can spend Claude tokens, so run them only when you intend to make a real Claude call.
