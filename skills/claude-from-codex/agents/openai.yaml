@@ -1,4 +1,6 @@
 interface:
-  display_name: "Claude From Codex"
-  short_description: "Delegate Codex work to local Claude Code."
-  default_prompt: "Ask Claude to investigate this bug in parallel"
+  display_name: "Claude from Codex"
+  short_description: "Delegate explicit Codex tasks to local Claude Code for parallel investigation, review, or bounded implementation."
+  default_prompt: "Run Claude setup diagnostics, then delegate this task with explicit context."
+policy:
+  allow_implicit_invocation: true
