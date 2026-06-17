@@ -63,7 +63,7 @@ Examples:
 - `Use $claude-from-codex to have Claude investigate why this test is failing. Do not edit files.`
 - `Use $claude-from-codex to ask Claude whether this README is clear for a first-time user.`
 
-By default, Codex should treat Claude's answer as another review signal, not as ground truth. Codex should still inspect files, tests, and diffs before acting on Claude's advice.
+Treat Claude's answer as one review signal, not ground truth. Keep checking files, tests, and diffs before acting on Claude's advice.
 
 For write-capable work, say that explicitly:
 
@@ -97,11 +97,3 @@ pnpm test
 ```
 
 The tests use a fake Claude executable. They do not call the real Claude API.
-
-For a non-generative live setup check:
-
-```sh
-node skills/claude-from-codex/scripts/claude-companion.mjs setup --json
-```
-
-Live foreground smoke tests can spend Claude tokens, so run them only when you intend to make a real Claude call.

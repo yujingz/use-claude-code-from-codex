@@ -27,7 +27,7 @@ node "$HOME/.agents/skills/claude-from-codex/scripts/claude-companion.mjs" setup
 
 ## Foreground Run
 
-Pass the prompt on stdin:
+Set `PROMPT` to the task text you want Claude to receive, then pass it on stdin:
 
 ```sh
 printf '%s\n' "$PROMPT" | node skills/claude-from-codex/scripts/claude-companion.mjs run --json
