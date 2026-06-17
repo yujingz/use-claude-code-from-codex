@@ -2,16 +2,25 @@
 
 A Codex skill for asking the local Claude Code CLI to help from inside Codex.
 
-The skill has two paths:
+Use it when you want Codex to bring Claude in for a second opinion, a read-only review, or a parallel investigation without leaving your Codex session.
 
-- Basic path: no JavaScript required. Codex calls the user's `claude` CLI directly for simple second opinions, review, and investigation.
-- Advanced path: Node required. Codex uses the optional companion script for setup diagnostics, environment filtering, background jobs, cancellation, and pruning.
-
-Claude auth, cc-switch, provider routing, and `~/.claude/settings.json` remain external user setup. This repo does not edit them.
+Prerequisite: Claude Code should already work on your machine.
 
 ## Install
 
-Use [`vercel-labs/skills`](https://github.com/vercel-labs/skills) as the default installer:
+### Ask Codex To Install It
+
+If you are using Codex UI or Codex CLI, you can paste this into your current agent:
+
+```text
+Install the Codex skill from https://github.com/yujingz/use-claude-code-from-codex.
+Prefer the vercel-labs/skills installer if it is available.
+Install the skill named claude-from-codex for Codex, then verify that $claude-from-codex is discoverable.
+```
+
+### Install From Terminal
+
+If you prefer a terminal command, use [`vercel-labs/skills`](https://github.com/vercel-labs/skills):
 
 ```sh
 npx skills add yujingz/use-claude-code-from-codex --skill claude-from-codex -g -a codex -y
@@ -34,7 +43,9 @@ If your Codex setup uses a different skills directory, link the same `skills/cla
 
 ### Verify Discovery
 
-Restart Codex or start a new Codex session, then check that `$claude-from-codex` appears in the available skills. No-model-call local checks:
+Restart Codex or start a new Codex session, then check that `$claude-from-codex` appears in the available skills.
+
+If you installed from a terminal, these local checks can help:
 
 ```sh
 npx skills list -g -a codex
@@ -43,68 +54,39 @@ codex debug prompt-input '$claude-from-codex discovery check; do not run command
 
 ## Basic Usage
 
-This path only needs Claude Code CLI.
+After installation, just ask Codex to use the skill. You do not need to run Claude commands yourself.
 
-```sh
-claude --setting-sources user,project,local auth status --json
-```
+Examples:
 
-Read-biased prompt:
+- `Use $claude-from-codex to ask Claude for a read-only review of my current diff. Focus on bugs, security issues, and missing tests.`
+- `Use $claude-from-codex to get Claude's second opinion on this implementation plan before we code.`
+- `Use $claude-from-codex to have Claude investigate why this test is failing. Do not edit files.`
+- `Use $claude-from-codex to ask Claude whether this README is clear for a first-time user.`
 
-```sh
-printf '%s\n' "$PROMPT" | claude -p --output-format json --setting-sources user,project,local --permission-mode plan --allowedTools Read,Grep,Glob --disable-slash-commands --no-session-persistence
-```
+Treat Claude's answer as one review signal, not ground truth. Keep checking files, tests, and diffs before acting on Claude's advice.
 
-If Codex cannot find `claude` on PATH, try the common local install path:
-
-```sh
-printf '%s\n' "$PROMPT" | "$HOME/.local/bin/claude" -p --output-format json --setting-sources user,project,local --permission-mode plan --allowedTools Read,Grep,Glob --disable-slash-commands --no-session-persistence
-```
-
-Use write-capable Claude only when the user explicitly asks for it:
-
-```sh
-printf '%s\n' "$PROMPT" | claude -p --output-format json --setting-sources user,project,local --permission-mode default --disable-slash-commands --no-session-persistence
-```
-
-After any write-capable run, inspect the workspace diff before continuing.
-
-## Optional Companion CLI
-
-The companion script is useful when you want setup diagnostics, cleaner child-process environment handling, or background Claude jobs. It has no npm dependencies, but it requires Node.
-
-Setup diagnostics:
-
-```sh
-node skills/claude-from-codex/scripts/claude-companion.mjs setup --json
-```
-
-Foreground run through the companion:
-
-```sh
-printf '%s\n' "$PROMPT" | node skills/claude-from-codex/scripts/claude-companion.mjs run --json
-```
-
-Background run:
-
-```sh
-printf '%s\n' "$PROMPT" | node skills/claude-from-codex/scripts/claude-companion.mjs run --background --json
-```
-
-Manage background jobs:
-
-```sh
-node skills/claude-from-codex/scripts/claude-companion.mjs status --json
-node skills/claude-from-codex/scripts/claude-companion.mjs result <job-id> --json
-node skills/claude-from-codex/scripts/claude-companion.mjs cancel <job-id> --json
-node skills/claude-from-codex/scripts/claude-companion.mjs prune --older-than 7d --json
-```
-
-Background state is stored outside the repo under:
+For write-capable work, say that explicitly:
 
 ```text
-${CLAUDE_FROM_CODEX_STATE_ROOT:-${XDG_STATE_HOME:-~/.local/state}/claude-from-codex}
+Use $claude-from-codex to let Claude make a small implementation pass on this bug.
+Keep the change scoped to the failing test, then show me the diff before we continue.
 ```
+
+## Troubleshooting
+
+If Claude works in your normal terminal but not inside Codex, ask Codex:
+
+```text
+Use $claude-from-codex to check whether Codex can see my local Claude Code CLI.
+Report what is missing.
+```
+
+Common causes:
+
+- `claude` is not on the PATH visible to Codex.
+- Codex was launched from an environment that cannot see the same tools as your terminal.
+
+Advanced diagnostics and background job commands are documented in [docs/companion-cli.md](docs/companion-cli.md).
 
 ## Development
 
@@ -115,11 +97,3 @@ pnpm test
 ```
 
 The tests use a fake Claude executable. They do not call the real Claude API.
-
-For a non-generative live setup check:
-
-```sh
-node skills/claude-from-codex/scripts/claude-companion.mjs setup --json
-```
-
-Live foreground smoke tests can spend Claude tokens, so run them only when you intend to make a real Claude call.
