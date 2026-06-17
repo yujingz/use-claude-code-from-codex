@@ -1,0 +1,44 @@
+# Claude from Codex
+
+> A plain Codex skill for using local Claude Code as a second opinion, code reviewer, or parallel coding agent from inside Codex.
+
+Claude from Codex lets Codex call the user's local Claude Code CLI for read-only review, plan feedback, failure investigation, documentation review, and bounded implementation passes. It works as a normal skill folder and does not require a Codex plugin login.
+
+## Start Here
+
+- [README](README.md): install instructions, quick start, basic usage, and troubleshooting.
+- [Skill instructions](skills/claude-from-codex/SKILL.md): the actual `claude-from-codex` skill that Codex loads.
+- [Copy-paste examples](docs/examples.md): prompts for installing the skill, reviewing a diff, getting a second opinion, investigating tests, and running background work.
+- [Optional companion CLI](docs/companion-cli.md): advanced diagnostics, environment filtering, and background job commands.
+
+## Installation
+
+Ask Codex to install:
+
+```text
+Install the Codex skill from https://github.com/yujingz/use-claude-code-from-codex.
+Prefer the vercel-labs/skills installer if it is available.
+Install the skill named claude-from-codex for Codex, then verify that $claude-from-codex is discoverable.
+```
+
+Terminal install:
+
+```sh
+npx skills add yujingz/use-claude-code-from-codex --skill claude-from-codex -g -a codex -y
+```
+
+## Common User Requests
+
+- "Use Claude Code from Codex."
+- "Get Claude's second opinion on this plan."
+- "Ask Claude to review my current diff."
+- "Have Claude investigate this failing test in parallel."
+- "Use Claude from Codex without installing a Codex plugin."
+
+## Notes For Agents
+
+- Prefer read-only Claude delegation unless the user explicitly asks for write-capable work.
+- Pass a self-contained prompt to Claude: goal, relevant files, constraints, acceptance criteria, and expected return format.
+- Treat Claude's answer as another review signal, not ground truth.
+- Verify important claims against the workspace before acting.
+- Keep Claude setup outside this repo; this skill diagnoses visibility but does not manage the user's Claude installation.
