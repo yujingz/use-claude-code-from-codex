@@ -114,9 +114,7 @@ export async function startBackgroundJob({ prompt, parsed, scriptPath, env = pro
     nodePath: resolvedNode.realPath,
     workspaceRoot,
   });
-  if (env.CLAUDE_FROM_CODEX_STATE_ROOT) {
-    workerEnv.CLAUDE_FROM_CODEX_STATE_ROOT = env.CLAUDE_FROM_CODEX_STATE_ROOT;
-  }
+  workerEnv.CLAUDE_FROM_CODEX_STATE_ROOT = created.baseRoot;
 
   const child = spawn(resolvedNode.realPath, [scriptPath, "worker", "--job-id", created.id, "--workspace", workspaceRoot], {
     cwd: workspaceRoot,

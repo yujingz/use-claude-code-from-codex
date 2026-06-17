@@ -286,6 +286,30 @@ test("background job completes and result is retrievable", async () => {
   assert.equal(JSON.parse(status.stdout).jobs[0].id, startPayload.id);
 });
 
+test("background worker uses the parent's resolved XDG state root", async () => {
+  const fixture = await makeFixture();
+  const fake = await writeFakeClaude(path.join(fixture.dir, "claude"));
+  const xdgStateHome = path.join(fixture.dir, "xdg-state");
+  const env = { ...process.env, CLAUDE_BIN: fake.bin, XDG_STATE_HOME: xdgStateHome };
+  delete env.CLAUDE_FROM_CODEX_STATE_ROOT;
+
+  const started = await spawnCapture(process.execPath, [scriptPath, "run", "--background", "--json"], {
+    cwd: repoRoot,
+    env,
+    input: "Background prompt via XDG state\n",
+  });
+
+  assert.equal(started.exitCode, 0, started.stderr);
+  const startPayload = JSON.parse(started.stdout);
+  assert.equal(startPayload.ok, true);
+  assert.match(startPayload.stateFile, new RegExp(escapeRegExp(path.join("xdg-state", "claude-from-codex"))));
+
+  const resultPayload = await pollResultWithEnv(startPayload.id, env);
+  assert.equal(resultPayload.ok, true);
+  assert.equal(resultPayload.job.status, "completed");
+  assert.match(resultPayload.output.stdout, /fake result/);
+});
+
 test("cancel marks a detached long-running job cancelled and result refuses output", async () => {
   const fixture = await makeFixture();
   const fake = await writeFakeClaude(path.join(fixture.dir, "claude"));
@@ -463,12 +487,16 @@ process.stdin.on("end", () => {
 }
 
 async function pollResult(id, stateRoot) {
+  return pollResultWithEnv(id, { ...process.env, CLAUDE_FROM_CODEX_STATE_ROOT: stateRoot });
+}
+
+async function pollResultWithEnv(id, env) {
   const deadline = Date.now() + 5000;
   let last;
   while (Date.now() < deadline) {
     const result = await spawnCapture(process.execPath, [scriptPath, "result", id, "--json"], {
       cwd: repoRoot,
-      env: { ...process.env, CLAUDE_FROM_CODEX_STATE_ROOT: stateRoot },
+      env,
     });
     last = result;
     if (result.exitCode === 0) {
