@@ -84,6 +84,27 @@ export async function resolveNodeBinary({
   });
 }
 
+export async function resolveGitBinary({
+  workspaceRoot = process.cwd(),
+  trustedRoots = defaultTrustedRoots(),
+  candidates = ["/usr/bin/git", "/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git"],
+} = {}) {
+  const warnings = [];
+  for (const candidate of candidates) {
+    const resolved = await validateCandidate(candidate, {
+      source: "git",
+      workspaceRoot,
+      trustedRoots,
+      fatal: false,
+      warnings,
+    });
+    if (resolved.ok) {
+      return resolved;
+    }
+  }
+  return notFound("Trusted git binary was not found", warnings);
+}
+
 export async function validateCandidate(candidate, options) {
   const warnings = options.warnings ?? [];
 
@@ -208,7 +229,7 @@ async function validateAncestorDirs(filePath, trustedRoots = []) {
     if (isWorldWritable(stat.mode) && !hasStickyBit(stat.mode)) {
       throw new Error(`ancestor is world-writable: ${current}`);
     }
-    if (isGroupWritable(stat.mode) && !trustedAncestor) {
+    if (isGroupWritable(stat.mode) && !trustedAncestor && !hasStickyBit(stat.mode)) {
       throw new Error(`ancestor is group-writable outside trusted roots: ${current}`);
     }
     const parent = path.dirname(current);

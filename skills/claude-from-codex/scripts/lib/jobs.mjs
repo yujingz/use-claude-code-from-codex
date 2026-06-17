@@ -3,7 +3,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { buildChildEnv } from "./env.mjs";
-import { resolveClaudeBinary, resolveNodeBinary } from "./resolver.mjs";
+import { resolveClaudeBinary, resolveGitBinary, resolveNodeBinary } from "./resolver.mjs";
 import { buildClaudeRunArgs, parseJsonObject, spawnCapture } from "./process.mjs";
 import {
   HEARTBEAT_STALE_MS,
@@ -47,14 +47,14 @@ export async function runClaudeForeground({ prompt, mode, workspaceRoot, env = p
     workspaceRoot,
   });
 
-  const beforeChangedFiles = mode === "write" ? await collectChangedFiles(workspaceRoot) : [];
+  const beforeChangedFiles = mode === "write" ? await collectChangedFiles(workspaceRoot, env) : [];
   const args = buildClaudeRunArgs({ mode, maxBudgetUsd });
   const result = await spawnCapture(resolvedClaude.realPath, args, {
     cwd: workspaceRoot,
     env: childEnv,
     input: prompt,
   });
-  const changedFiles = mode === "write" ? await collectChangedFiles(workspaceRoot) : [];
+  const changedFiles = mode === "write" ? await collectChangedFiles(workspaceRoot, env) : [];
 
   return {
     ok: result.exitCode === 0,
@@ -302,8 +302,9 @@ export async function refreshJobStatus({ workspaceRoot, env, job }) {
   }
 
   const updatedAt = Date.parse(job.updatedAt || job.createdAt);
-  const staleByAge = Number.isFinite(updatedAt) && Date.now() - updatedAt > HEARTBEAT_STALE_MS;
-  const staleByPid = job.pid ? !(await isPidAlive(job.pid)) : false;
+  const pidAlive = job.pid ? await isPidAlive(job.pid) : false;
+  const staleByAge = Number.isFinite(updatedAt) && Date.now() - updatedAt > HEARTBEAT_STALE_MS && !pidAlive;
+  const staleByPid = job.pid ? !pidAlive : false;
 
   if (staleByAge || staleByPid) {
     const stale = {
@@ -340,9 +341,16 @@ export function summarizeJob(job) {
   };
 }
 
-export async function collectChangedFiles(cwd) {
+export async function collectChangedFiles(cwd, env = process.env) {
   try {
-    const result = await spawnCapture("git", ["status", "--porcelain=v1", "-z"], { cwd, env: process.env });
+    const git = await resolveGitBinary({ workspaceRoot: cwd });
+    if (!git.ok) {
+      return [];
+    }
+    const result = await spawnCapture(git.realPath, ["status", "--porcelain=v1", "-z"], {
+      cwd,
+      env: buildChildEnv(env, { workspaceRoot: cwd }),
+    });
     if (result.exitCode !== 0 || !result.stdout) {
       return [];
     }

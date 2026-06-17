@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { parseArgs, parseDuration } from "../skills/claude-from-codex/scripts/lib/args.mjs";
 import { buildChildEnv } from "../skills/claude-from-codex/scripts/lib/env.mjs";
+import { collectChangedFiles, statusJobs } from "../skills/claude-from-codex/scripts/lib/jobs.mjs";
 import { buildClaudeRunArgs, spawnCapture } from "../skills/claude-from-codex/scripts/lib/process.mjs";
 import { resolveClaudeBinary } from "../skills/claude-from-codex/scripts/lib/resolver.mjs";
 import { createJob, readJob, updateJobGuarded } from "../skills/claude-from-codex/scripts/lib/state.mjs";
@@ -136,6 +137,22 @@ test("resolver discovers user-local Claude from env HOME before PATH", async () 
   const result = await resolveClaudeBinary({ env: { HOME: home, PATH: "" }, workspaceRoot: repoRoot });
   assert.equal(result.ok, true, result.message);
   assert.equal(result.source, "user-local");
+  assert.equal(result.realPath, await fsp.realpath(bin));
+});
+
+test("resolver allows trusted binaries below sticky temp ancestors", async () => {
+  const fixture = await makeFixture();
+  const stickyRoot = path.join(fixture.dir, "sticky");
+  await fsp.mkdir(stickyRoot, { recursive: true });
+  await fsp.chmod(stickyRoot, 0o1777);
+
+  const home = path.join(stickyRoot, "home");
+  const bin = path.join(home, ".local/bin/claude");
+  await fsp.mkdir(path.dirname(bin), { recursive: true, mode: 0o700 });
+  await writeFakeClaude(bin);
+
+  const result = await resolveClaudeBinary({ env: { HOME: home, PATH: "" }, workspaceRoot: repoRoot });
+  assert.equal(result.ok, true, result.message);
   assert.equal(result.realPath, await fsp.realpath(bin));
 });
 
@@ -293,6 +310,46 @@ test("cancel marks a detached long-running job cancelled and result refuses outp
   });
   assert.equal(result.exitCode, 1);
   assert.match(JSON.parse(result.stdout).error, /cancelled/);
+});
+
+test("live long-running jobs are not marked stale only because updatedAt is old", async () => {
+  const fixture = await makeFixture();
+  const stateRoot = path.join(fixture.dir, "state");
+  const oldTimestamp = new Date(Date.now() - 2 * 6 * 60 * 60 * 1000).toISOString();
+  const created = await createJob({
+    workspaceRoot: repoRoot,
+    env: { ...process.env, CLAUDE_FROM_CODEX_STATE_ROOT: stateRoot },
+    prompt: "still running",
+    record: {
+      id: "live-old-job",
+      mode: "readonly",
+      status: "running",
+      pid: process.pid,
+      updatedAt: oldTimestamp,
+    },
+  });
+
+  const status = await statusJobs({ workspaceRoot: repoRoot, env: { ...process.env, CLAUDE_FROM_CODEX_STATE_ROOT: stateRoot }, id: created.id });
+  assert.equal(status.jobs[0].status, "running");
+});
+
+test("changed-file collection does not execute workspace git from PATH", async () => {
+  const fixture = await makeFixture();
+  const fakeGit = path.join(fixture.dir, "git");
+  const marker = path.join(fixture.dir, "pwned");
+  await fsp.writeFile(
+    fakeGit,
+    `#!/bin/sh\nprintf pwned > ${JSON.stringify(marker)}\nexit 0\n`,
+    { mode: 0o700 },
+  );
+  await fsp.chmod(fakeGit, 0o700);
+
+  await collectChangedFiles(fixture.dir, {
+    ...process.env,
+    PATH: `${fixture.dir}${path.delimiter}${process.env.PATH || ""}`,
+  });
+
+  await assert.rejects(fsp.stat(marker), /ENOENT/);
 });
 
 test("terminal job states are not overwritten and redaction applies to summaries", async () => {
